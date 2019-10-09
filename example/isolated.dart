@@ -8,6 +8,6 @@ Future<void> main() async {
   var second = List.generate(1000, (_) => random.nextInt(100));
 
   print('Calculating operations on other isolate.');
-  var operations = await diff(first, second, useSeparateIsolate: true);
+  var operations = await diff(first, second, spawnIsolate: true);
   print('${operations.length} operations needed.');
 }
