@@ -28,12 +28,12 @@ part of 'list_diff.dart';
 //     in the new list if this is an insertion.
 // * The main isolate can then reconstruct the operations by looking up the
 //   original items.
-Future<List<Operation<Item>>> _isolatedDiff<Item>(
+Future<List<Operation<Item>>> _calculateDiffInSeparateIsolate<Item>(
   List<Item> oldList,
   List<Item> newList,
 ) async {
   final receivePort = ReceivePort();
-  await Isolate.spawn(_calculateIsolatedDiff, receivePort.sendPort);
+  await Isolate.spawn(_calculationInIsolate, receivePort.sendPort);
   final port = StreamQueue(receivePort);
   final SendPort sendPort = await port.next;
 
@@ -52,7 +52,7 @@ Future<List<Operation<Item>>> _isolatedDiff<Item>(
   return operations;
 }
 
-Future<void> _calculateIsolatedDiff(dynamic message) async {
+Future<void> _calculationInIsolate(dynamic message) async {
   final sendPort = message as SendPort;
   final receivePort = ReceivePort();
   sendPort.send(receivePort.sendPort);

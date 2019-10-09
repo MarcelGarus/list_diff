@@ -35,7 +35,7 @@ part 'isolated.dart';
 ///
 /// If the lists are large, this operation may take some time so if you're
 /// handling large data sets, better run this on a background isolate by
-/// setting [useSeparateIsolate] to [true]:
+/// setting [spawnIsolate] to [true]:
 ///
 /// ```
 /// var operations = await diff(first, second, useSeparateIsolate: true);
@@ -71,9 +71,9 @@ part 'isolated.dart';
 Future<List<Operation<Item>>> diff<Item>(
   List<Item> oldList,
   List<Item> newList, {
-  bool useSeparateIsolate = false,
+  bool spawnIsolate = false,
 }) async {
-  return await useSeparateIsolate
-      ? _isolatedDiff(oldList, newList)
+  return await spawnIsolate
+      ? _calculateDiffInSeparateIsolate(oldList, newList)
       : _calculateDiff(oldList, newList);
 }
