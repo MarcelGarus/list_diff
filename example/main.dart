@@ -1,11 +1,11 @@
 import 'package:list_diff/list_diff.dart';
 
-void main() {
+void main() async {
   var nutMix = ['coconut', 'nut', 'peanut'];
   var tropic = ['kiwi', 'coconut', 'maracuja', 'nut', 'banana'];
 
   // Now, let's turn the nut mix into the tropical mix.
-  var recipe = diff(nutMix, tropic);
+  var recipe = await diff(nutMix, tropic);
 
   // Let's try it out!
   var bowl = List<String>.from(nutMix);
