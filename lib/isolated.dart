@@ -67,7 +67,7 @@ Future<void> _calculationInIsolate(dynamic message) async {
   receivePort.close();
 }
 
-// Used on the worker isolate to refer to an item on the main isolate.
+// Used in the worker isolate to refer to an item in the main isolate.
 class _ReferenceToItemOnOtherIsolate {
   final StreamQueue port;
   final SendPort sendPort;

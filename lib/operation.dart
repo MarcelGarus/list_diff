@@ -16,6 +16,12 @@ class Operation<Item> {
 
   Operation._({this.type, this.index, this.item});
 
+  Operation<Item> _shift(int shiftAmount) => Operation._(
+        type: type,
+        index: index + shiftAmount,
+        item: item,
+      );
+
   /// Actually applies this operation on the [list] by mutating it.
   void applyTo(List<Item> list) {
     if (isInsertion) {

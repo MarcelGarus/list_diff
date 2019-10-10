@@ -26,6 +26,10 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  int get numSamples => spawnTimes.length;
+
+  String message;
+
   final spawnTimes = <double>[];
   double get spawnTimesAverage => spawnTimes.isEmpty
       ? null
@@ -53,6 +57,8 @@ class _MyHomePageState extends State<MyHomePage> {
     var spawnTime = (withIsolate - withoutIsolate).clamp(0, 10000000000);
     var timePerCell = withoutIsolate / (a.length + 1) / (b.length + 1);
     setState(() {
+      message =
+          'Diffed ${a.length}x${b.length} lists. Without isolate: $withoutIsolate ys';
       spawnTimes.add(spawnTime.toDouble());
       timesPerCell.add(timePerCell);
     });
@@ -79,6 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            Text('Samples: $numSamples'),
             Text('Spawn time: $spawnTimesAverage'),
             Text('Times per cell: $timesPerCellAverage'),
           ],
