@@ -87,8 +87,10 @@ Future<List<Operation<Item>>> diff<Item>(
     end++;
   }
   // We can now reduce the problem to two possibly smaller sublists.
-  final shortenedOldList = oldList.sublist(start, oldLen - end);
-  final shortenedNewList = newList.sublist(start, newLen - end);
+  final shortenedOldList =
+      oldLen == end ? <Item>[] : oldList.sublist(start, oldLen - end);
+  final shortenedNewList =
+      newLen == end ? <Item>[] : newList.sublist(start, newLen - end);
 
   // If no [spawnIsolate] is given, we try to automatically choose a value that
   // aligns with our performance goals.
@@ -111,7 +113,7 @@ Future<List<Operation<Item>>> diff<Item>(
   spawnIsolate ??= shortenedOldList.length * shortenedNewList.length > 1500;
 
   // Those are sublists that reduce the problem to a smaller problem domain.
-  var operations = await (spawnIsolate
+  List<Operation<Item>> operations = await (spawnIsolate
       ? _calculateDiffInSeparateIsolate(shortenedOldList, shortenedNewList)
       : _calculateDiff(shortenedOldList, shortenedNewList));
 

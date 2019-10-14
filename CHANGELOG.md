@@ -1,3 +1,13 @@
+## [1.1.3] - 2019-10-14
+
+* Important fix: Fixed error in algorithm that made it crash when the two lists
+  are the same.
+
+## [1.1.2] - 2019-10-13
+
+* Important fix: Fixed error in algorithm that produced wrong results that
+  couldn't actually be applied.
+
 ## [1.1.1] - 2019-10-10
 
 * BREAKING CHANGE: `runOnSeparateIsolate` renamed to `spawnIsolate`.

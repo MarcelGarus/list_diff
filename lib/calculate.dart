@@ -90,7 +90,7 @@ Future<List<Operation<Item>>> _calculateDiff<Item>(
     if (x == 0) {
       row.add(_Sequence.unchanged(null));
     } else {
-      row.add(_Sequence.insert(row.last, oldList[x - 1]));
+      row.add(_Sequence.delete(row.last, oldList[x - 1]));
     }
   }
 
