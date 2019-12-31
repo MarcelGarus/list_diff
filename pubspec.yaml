@@ -9,3 +9,6 @@ environment:
 
 dependencies:
   async: ">=2.2.0 <2.5.0"
+
+dev_dependencies:
+  test: ^1.9.4
