@@ -25,7 +25,8 @@ part 'isolated.dart';
 /// // Deletion of peanut at 5.
 /// ```
 ///
-/// The [Item]'s [==] operator is used to compare items.
+/// [Items] are compared using [areEqual] and [getHashCode] functions or the
+/// [Item]'s [==] operator if parameters aren't specified.
 ///
 /// This function uses a variant of the Levenshtein algorithm to find the
 /// minimum number of operations. This is a simple solution. If you need a more
@@ -71,19 +72,30 @@ Future<List<Operation<Item>>> diff<Item>(
   List<Item> oldList,
   List<Item> newList, {
   bool spawnIsolate,
+  bool Function(Item a, Item b) areEqual,
+  int Function(Item item) getHashCode,
 }) async {
+  assert((areEqual != null) == (getHashCode != null),
+      'Both areEqual and getHashCode or neither of them have specified.');
+
+  // Use == operator and item hash code as default comparison functions
+  areEqual ??= (a, b) => a == b;
+  getHashCode ??= (item) => item.hashCode;
+
   // Check if the lists start or end with the same items to trim the problem
   // down as much as possible.
   final oldLen = oldList.length;
   final newLen = newList.length;
   var start = 0;
-  while (start < oldLen && start < newLen && oldList[start] == newList[start]) {
+  while (start < oldLen &&
+      start < newLen &&
+      areEqual(oldList[start], newList[start])) {
     start++;
   }
   var end = 0;
   while (end < oldLen &&
       end < newLen &&
-      oldList[oldLen - 1 - end] == newList[newLen - 1 - end]) {
+      areEqual(oldList[oldLen - 1 - end], newList[newLen - 1 - end])) {
     end++;
   }
   // We can now reduce the problem to two possibly smaller sublists.
@@ -114,8 +126,9 @@ Future<List<Operation<Item>>> diff<Item>(
 
   // Those are sublists that reduce the problem to a smaller problem domain.
   List<Operation<Item>> operations = await (spawnIsolate
-      ? _calculateDiffInSeparateIsolate(shortenedOldList, shortenedNewList)
-      : _calculateDiff(shortenedOldList, shortenedNewList));
+      ? _calculateDiffInSeparateIsolate(
+          shortenedOldList, shortenedNewList, areEqual, getHashCode)
+      : _calculateDiff(shortenedOldList, shortenedNewList, areEqual));
 
   // Shift operations back.
   return operations.map((op) => op._shift(start)).toList();

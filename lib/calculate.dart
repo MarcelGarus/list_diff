@@ -82,8 +82,8 @@ class _Sequence<Item> {
 // row is replaced with the new one.
 // Also, instead of storing just the number of moves, we store the [_Sequence]
 // of operations so that we can later retrace the path we took.
-Future<List<Operation<Item>>> _calculateDiff<Item>(
-    List<Item> oldList, List<Item> newList) async {
+Future<List<Operation<Item>>> _calculateDiff<Item>(List<Item> oldList,
+    List<Item> newList, bool Function(Item a, Item b) areEqual) async {
   var row = <_Sequence<Item>>[];
 
   for (var x = 0; x <= oldList.length; x++) {
@@ -100,7 +100,7 @@ Future<List<Operation<Item>>> _calculateDiff<Item>(
     for (var x = 0; x <= oldList.length; x++) {
       if (x == 0) {
         nextRow.add(_Sequence.insert(row[0], newList[y]));
-      } else if (await _doItemsMatch(newList[y], oldList[x - 1])) {
+      } else if (await _doItemsMatch(newList[y], oldList[x - 1], areEqual)) {
         nextRow.add(_Sequence.unchanged(row[x - 1]));
       } else if (row[x].isBetterThan(nextRow[x - 1])) {
         nextRow.add(_Sequence.insert(row[x], newList[y]));
@@ -115,12 +115,13 @@ Future<List<Operation<Item>>> _calculateDiff<Item>(
   return row.last.toOperations();
 }
 
-Future<bool> _doItemsMatch<Item>(Item first, Item second) async {
+Future<bool> _doItemsMatch<Item>(
+    Item first, Item second, bool Function(Item a, Item b) areEqual) async {
   if (Item == _ReferenceToItemOnOtherIsolate) {
     final firstRef = first as _ReferenceToItemOnOtherIsolate;
     final secondRef = second as _ReferenceToItemOnOtherIsolate;
     return await firstRef.equals(secondRef);
   } else {
-    return first == second;
+    return areEqual(first, second);
   }
 }
