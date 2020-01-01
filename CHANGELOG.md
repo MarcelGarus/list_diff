@@ -1,3 +1,7 @@
+## [1.2.0] - 2020-01-01
+
+* Add option to provide `areEqual` and `getHashCode` functions.
+
 ## [1.1.3] - 2019-10-14
 
 * Important fix: Fixed error in algorithm that made it crash when the two lists
