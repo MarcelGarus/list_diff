@@ -1,3 +1,8 @@
+## [1.2.1] - 2020-01-01
+
+* Add extension method for more intuitive `list.apply(operation)` instead of `operation.applyTo(list)`.
+* Revised readme.
+
 ## [1.2.0] - 2020-01-01
 
 * Add option to provide `areEqual` and `getHashCode` functions.
