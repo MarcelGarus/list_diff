@@ -23,7 +23,7 @@ can also directly apply them to a list:
 var fruitBowl = ['coconut', 'nut', 'peanut'];
 
 for (var operation in operations) {
-    operation.applyTo(fruitBowl);
+  fruitBowl.apply(operation);
 }
 
 // Transforming:
@@ -34,16 +34,27 @@ for (var operation in operations) {
 // [kiwi, coconut, maracuja, nut, banana]
 ```
 
-The lists' items are compared using their `==` operator.
+The lists' items are compared using their `==` operator and `hashCode` by default.
+But you can specify a custom comparison method and hash code:
+
+```dart
+var operations = await diff(
+  first,
+  second,
+  areEqual: (a, b) => ...,
+  getHashCode: (a) => ...,
+);
+```
 
 ### A word about performance and threading
 
-The current version of the function is not as performant as it could be.
+I'm not sure the current version is as performant as it could be.
 The runtime is currently O(N*M), where N and M are the lengths of the lists.
+If you know a better algorithm, feel welcome to open an issue or file a pull request.
 
 If the data sets are large, the `diff` function automatically spawns an
-isolate. If you don't want more control on whether an isolate should be
-spawned, you can also explicitly set the [spawnIsolate] parameter:
+isolate. If you want more control on whether an isolate should be
+spawned, you can also explicitly set the `spawnIsolate` parameter:
 
 ```dart
 var operations = await diff(first, second, spawnIsolate: true);
@@ -51,27 +62,5 @@ var operations = await diff(first, second, spawnIsolate: true);
 
 ### For Flutter users
 
-[diff] can be used to calculate updates for an [AnimatedList]:
-
-```dart
-final _listKey = GlobalKey<AnimatedListState>();
-List<String> _lastFruits;
-...
-StreamBuilder<String>(
-  stream: fruitStream,
-  initialData: [],
-  builder: (context, snapshot) {
-    for (var operation in await diff(_lastFruits, snapshot.data)) {
-      if (operation.isInsertion) {
-        _listKey.insertItem(operation.index);
-      } else {
-        _listKey.removeItem(operation.index, (context, animation) => ...);
-      }
-    }
-    return AnimatedList(
-      key: _listKey,
-      itemBuilder: (context, index, animation) => ...,
-    );
-  },
-),
-```
+`diff` can be used to calculate updates for an `AnimatedList`.
+The [implicitly_animated_list](https://pub.dev/packages/implicitly_animated_list) package does that for you.
