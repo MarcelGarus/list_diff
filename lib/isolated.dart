@@ -31,20 +31,22 @@ part of 'list_diff.dart';
 Future<List<Operation<Item>>> _calculateDiffInSeparateIsolate<Item>(
   List<Item> oldList,
   List<Item> newList,
+  bool Function(Item a, Item b) areEqual,
+  int Function(Item item) getHashCode,
 ) async {
   final receivePort = ReceivePort();
   await Isolate.spawn(_calculationInIsolate, receivePort.sendPort);
   final port = StreamQueue(receivePort);
   final SendPort sendPort = await port.next;
 
-  _sendItemList(sendPort, oldList);
-  _sendItemList(sendPort, newList);
+  _sendItemList(sendPort, oldList, getHashCode);
+  _sendItemList(sendPort, newList, getHashCode);
 
   while (!await port.next) {
     // Two items' hashCodes match. Let's find out if they're really the same.
     final first = oldList[await port.next];
     final second = newList[await port.next];
-    sendPort.send(first == second);
+    sendPort.send(areEqual(first, second));
   }
 
   final operations = await _receiveOperationsList(port, oldList, newList);
@@ -100,10 +102,11 @@ class _ReferenceToItemOnOtherIsolate {
   }
 }
 
-void _sendItemList(SendPort sendPort, List<dynamic> list) {
+void _sendItemList(SendPort sendPort, List<dynamic> list,
+    int Function(dynamic item) getHashCode) {
   sendPort.send(list.length);
   for (var item in list) {
-    sendPort.send(item.hashCode);
+    sendPort.send(getHashCode(item));
   }
 }
 
