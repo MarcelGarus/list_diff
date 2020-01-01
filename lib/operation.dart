@@ -38,3 +38,7 @@ class Operation<Item> {
   String toString() =>
       '${isInsertion ? 'Insertion' : 'Deletion'} of $item at $index.';
 }
+
+extension ApplyOperation<T> on List<T> {
+  void apply(Operation<T> operation) => operation.applyTo(this);
+}
