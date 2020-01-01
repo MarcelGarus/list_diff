@@ -1,7 +1,6 @@
 name: list_diff
 description: "📃 Calculates a minimal list of operations that convert one list into another if applied in order."
 version: 1.2.0
-author: Marcel Garus <marcel.garus@gmail.com>
 homepage: https://github.com/marcelgarus/list_diff
 
 environment:
