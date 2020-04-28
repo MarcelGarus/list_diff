@@ -53,7 +53,7 @@ class _Sequence<Item> {
 }
 
 // This algorithm works by filling out a table with the two lists at the
-// axises, where a cell at position x,y represents the number of operations
+// axes, where a cell at position x,y represents the number of operations
 // needed to get from the first x items of the first list to the first y items
 // of the second one.
 // Let's say, the old list is [a, b] and the new one is [a, c]. The following
