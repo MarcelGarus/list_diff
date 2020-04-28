@@ -3,11 +3,14 @@
 library list_diff;
 
 import 'dart:isolate';
-import 'package:async/async.dart';
 
-part 'operation.dart';
+import 'package:async/async.dart';
+import 'package:meta/meta.dart';
+
 part 'calculate.dart';
 part 'isolated.dart';
+part 'operation.dart';
+part 'trim.dart';
 
 /// Calculates a minimal list of [Operation]s that convert the [oldList] into
 /// the [newList].
@@ -82,54 +85,27 @@ Future<List<Operation<Item>>> diff<Item>(
   areEqual ??= (a, b) => a == b;
   getHashCode ??= (item) => item.hashCode;
 
-  // Check if the lists start or end with the same items to trim the problem
-  // down as much as possible.
-  final oldLen = oldList.length;
-  final newLen = newList.length;
-  var start = 0;
-  while (start < oldLen &&
-      start < newLen &&
-      areEqual(oldList[start], newList[start])) {
-    start++;
-  }
-  var end = 0;
-  while (end < oldLen &&
-      end < newLen &&
-      areEqual(oldList[oldLen - 1 - end], newList[newLen - 1 - end])) {
-    end++;
-  }
-  // We can now reduce the problem to two possibly smaller sublists.
-  final shortenedOldList =
-      oldLen == end ? <Item>[] : oldList.sublist(start, oldLen - end);
-  final shortenedNewList =
-      newLen == end ? <Item>[] : newList.sublist(start, newLen - end);
+  final trimResult = _trim(oldList, newList, areEqual);
 
-  // If no [spawnIsolate] is given, we try to automatically choose a value that
-  // aligns with our performance goals.
-  // The algorithm fills an N times M table of cells, where N and M are the
-  // lengths of both lists. Because most Dart code is eventually used in
-  // Flutter as AOT-compiled code, I did some performance testing on a
-  // OnePlus 6T. Turns out, spawning an isolate and transmitting the necessary
-  // data takes about 13 ms and filling one cell about 4 µs.
-  // Let's say an app wants to achieve 90 fps (that may seem like a stretch,
-  // but keep in mind that there are lots of less-performant devices, so the
-  // benchmark speeds are taken with an upper-bound-ish kind of view).
-  // That leaves us with about 11 ms per frame. Because there's probably a lot
-  // of other stuff happening apart from calculating the differences (like,
-  // actually animating stuff and building widgets), let's say we want the diff
-  // to at most take up half of the time, so at most 6 ms.
-  // Whether we should spawn an isolate only depends on if we can fit the
-  // calculation of the N*M cells into the timeframe of 6 ms. With a cell
-  // calculation time of 4 µs, we can calculate the value of
-  // 6 ms / 4 µs = 1.500 cells to still be able to hit our deadline.
-  spawnIsolate ??= shortenedOldList.length * shortenedNewList.length > 1500;
+  spawnIsolate ??= _shouldSpawnIsolate(
+    trimResult.shortenedOldList,
+    trimResult.shortenedNewList,
+  );
 
   // Those are sublists that reduce the problem to a smaller problem domain.
   List<Operation<Item>> operations = await (spawnIsolate
       ? _calculateDiffInSeparateIsolate(
-          shortenedOldList, shortenedNewList, areEqual, getHashCode)
-      : _calculateDiff(shortenedOldList, shortenedNewList, areEqual));
+          trimResult.shortenedOldList,
+          trimResult.shortenedNewList,
+          areEqual,
+          getHashCode,
+        )
+      : _calculateDiff(
+          trimResult.shortenedOldList,
+          trimResult.shortenedNewList,
+          areEqual,
+        ));
 
   // Shift operations back.
-  return operations.map((op) => op._shift(start)).toList();
+  return operations.map((op) => op._shift(trimResult.start)).toList();
 }

@@ -1,5 +1,27 @@
 part of 'list_diff.dart';
 
+bool _shouldSpawnIsolate<Item>(List<Item> oldList, List<Item> newList) {
+  // If no [spawnIsolate] is given, we try to automatically choose a value that
+  // aligns with our performance goals.
+  // The algorithm fills an N times M table of cells, where N and M are the
+  // lengths of both lists. Because most Dart code is eventually used in
+  // Flutter as AOT-compiled code, I did some performance testing on a
+  // OnePlus 6T. Turns out, spawning an isolate and transmitting the necessary
+  // data takes about 13 ms and filling one cell about 4 µs.
+  // Let's say an app wants to achieve 90 fps (that may seem like a stretch,
+  // but keep in mind that there are lots of less-performant devices, so the
+  // benchmark speeds are taken with an upper-bound-ish kind of view).
+  // That leaves us with about 11 ms per frame. Because there's probably a lot
+  // of other stuff happening apart from calculating the differences (like,
+  // actually animating stuff and building widgets), let's say we want the diff
+  // to at most take up half of the time, so at most 6 ms.
+  // Whether we should spawn an isolate only depends on if we can fit the
+  // calculation of the N*M cells into the timeframe of 6 ms. With a cell
+  // calculation time of 4 µs, we can calculate the value of
+  // 6 ms / 4 µs = 1.500 cells to still be able to hit our deadline.
+  return oldList.length * newList.length > 1500;
+}
+
 // Isolates do not share memory and only communicate using ports which can only
 // send some primitive types. That means, the items can't be copied to the
 // other isolate.
