@@ -71,6 +71,9 @@ part 'trim.dart';
 ///   },
 /// ),
 /// ```
+///
+/// See also:
+/// - [diffSync], if your lists are very small.
 Future<List<Operation<Item>>> diff<Item>(
   List<Item> oldList,
   List<Item> newList, {
@@ -78,8 +81,10 @@ Future<List<Operation<Item>>> diff<Item>(
   bool Function(Item a, Item b) areEqual,
   int Function(Item item) getHashCode,
 }) async {
-  assert((areEqual != null) == (getHashCode != null),
-      'Both areEqual and getHashCode or neither of them have specified.');
+  assert(
+    (areEqual != null) == (getHashCode != null),
+    'Both areEqual and getHashCode or neither of them have been specified.',
+  );
 
   // Use == operator and item hash code as default comparison functions
   areEqual ??= (a, b) => a == b;
@@ -93,18 +98,47 @@ Future<List<Operation<Item>>> diff<Item>(
   );
 
   // Those are sublists that reduce the problem to a smaller problem domain.
-  List<Operation<Item>> operations = await (spawnIsolate
-      ? _calculateDiffInSeparateIsolate(
+  List<Operation<Item>> operations = spawnIsolate
+      ? await _calculateDiffInSeparateIsolate(
           trimResult.shortenedOldList,
           trimResult.shortenedNewList,
           areEqual,
           getHashCode,
         )
-      : _calculateDiff(
+      : diffSync(
           trimResult.shortenedOldList,
           trimResult.shortenedNewList,
-          areEqual,
-        ));
+          areEqual: areEqual,
+        );
+
+  // Shift operations back.
+  return operations.map((op) => op._shift(trimResult.start)).toList();
+}
+
+/// Calculates a minimal list of [Operation]s that convert the [oldList] into
+/// the [newList].
+///
+/// Unlike [diff], this function works synchronously (i.e., without using
+/// [Future]s).
+///
+/// See also:
+/// - [diff], for a detailed explanation or if you have very long lists.
+List<Operation<Item>> diffSync<Item>(
+  List<Item> oldList,
+  List<Item> newList, {
+  bool Function(Item a, Item b) areEqual,
+}) {
+  // Use == operator and item hash code as default comparison functions
+  areEqual ??= (a, b) => a == b;
+
+  final trimResult = _trim(oldList, newList, areEqual);
+
+  // Those are sublists that reduce the problem to a smaller problem domain.
+  List<Operation<Item>> operations = _calculateDiffSync(
+    trimResult.shortenedOldList,
+    trimResult.shortenedNewList,
+    areEqual,
+  );
 
   // Shift operations back.
   return operations.map((op) => op._shift(trimResult.start)).toList();
