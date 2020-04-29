@@ -1,3 +1,7 @@
+## [1.3.0] - 2020-04-29
+
+* Add `diffSync` method.
+
 ## [1.2.1] - 2020-01-01
 
 * Add extension method for more intuitive `list.apply(operation)` instead of `operation.applyTo(list)`.
