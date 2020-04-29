@@ -87,15 +87,7 @@ Future<List<Operation<Item>>> _calculateDiff<Item>(
   List<Item> newList,
   bool Function(Item a, Item b) areEqual,
 ) async {
-  var row = <_Sequence<Item>>[];
-
-  for (var x = 0; x <= oldList.length; x++) {
-    if (x == 0) {
-      row.add(_Sequence.unchanged(null));
-    } else {
-      row.add(_Sequence.delete(row.last, oldList[x - 1]));
-    }
-  }
+  var row = _getInitialRow(oldList);
 
   for (var y = 0; y < newList.length; y++) {
     final nextRow = <_Sequence<Item>>[];
@@ -140,15 +132,7 @@ List<Operation<Item>> _calculateDiffSync<Item>(
 ) {
   assert(Item is! _ReferenceToItemOnOtherIsolate);
 
-  var row = <_Sequence<Item>>[];
-
-  for (var x = 0; x <= oldList.length; x++) {
-    if (x == 0) {
-      row.add(_Sequence.unchanged(null));
-    } else {
-      row.add(_Sequence.delete(row.last, oldList[x - 1]));
-    }
-  }
+  var row = _getInitialRow(oldList);
 
   for (var y = 0; y < newList.length; y++) {
     final nextRow = <_Sequence<Item>>[];
@@ -169,4 +153,18 @@ List<Operation<Item>> _calculateDiffSync<Item>(
   }
 
   return row.last.toOperations();
+}
+
+List<_Sequence<Item>> _getInitialRow<Item>(List<Item> oldList) {
+  final row = <_Sequence<Item>>[];
+
+  for (var x = 0; x <= oldList.length; x++) {
+    if (x == 0) {
+      row.add(_Sequence.unchanged(null));
+    } else {
+      row.add(_Sequence.delete(row.last, oldList[x - 1]));
+    }
+  }
+  ;
+  return row;
 }
