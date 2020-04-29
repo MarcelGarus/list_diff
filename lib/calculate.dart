@@ -53,7 +53,7 @@ class _Sequence<Item> {
 }
 
 // This algorithm works by filling out a table with the two lists at the
-// axises, where a cell at position x,y represents the number of operations
+// axes, where a cell at position x,y represents the number of operations
 // needed to get from the first x items of the first list to the first y items
 // of the second one.
 // Let's say, the old list is [a, b] and the new one is [a, c]. The following
@@ -82,17 +82,12 @@ class _Sequence<Item> {
 // row is replaced with the new one.
 // Also, instead of storing just the number of moves, we store the [_Sequence]
 // of operations so that we can later retrace the path we took.
-Future<List<Operation<Item>>> _calculateDiff<Item>(List<Item> oldList,
-    List<Item> newList, bool Function(Item a, Item b) areEqual) async {
-  var row = <_Sequence<Item>>[];
-
-  for (var x = 0; x <= oldList.length; x++) {
-    if (x == 0) {
-      row.add(_Sequence.unchanged(null));
-    } else {
-      row.add(_Sequence.delete(row.last, oldList[x - 1]));
-    }
-  }
+Future<List<Operation<Item>>> _calculateDiff<Item>(
+  List<Item> oldList,
+  List<Item> newList,
+  bool Function(Item a, Item b) areEqual,
+) async {
+  var row = _getInitialRow(oldList);
 
   for (var y = 0; y < newList.length; y++) {
     final nextRow = <_Sequence<Item>>[];
@@ -116,7 +111,10 @@ Future<List<Operation<Item>>> _calculateDiff<Item>(List<Item> oldList,
 }
 
 Future<bool> _doItemsMatch<Item>(
-    Item first, Item second, bool Function(Item a, Item b) areEqual) async {
+  Item first,
+  Item second,
+  bool Function(Item a, Item b) areEqual,
+) async {
   if (Item == _ReferenceToItemOnOtherIsolate) {
     final firstRef = first as _ReferenceToItemOnOtherIsolate;
     final secondRef = second as _ReferenceToItemOnOtherIsolate;
@@ -124,4 +122,49 @@ Future<bool> _doItemsMatch<Item>(
   } else {
     return areEqual(first, second);
   }
+}
+
+/// A synchronous variant of [_calculateDiff].
+List<Operation<Item>> _calculateDiffSync<Item>(
+  List<Item> oldList,
+  List<Item> newList,
+  bool Function(Item a, Item b) areEqual,
+) {
+  assert(Item is! _ReferenceToItemOnOtherIsolate);
+
+  var row = _getInitialRow(oldList);
+
+  for (var y = 0; y < newList.length; y++) {
+    final nextRow = <_Sequence<Item>>[];
+
+    for (var x = 0; x <= oldList.length; x++) {
+      if (x == 0) {
+        nextRow.add(_Sequence.insert(row[0], newList[y]));
+      } else if (areEqual(newList[y], oldList[x - 1])) {
+        nextRow.add(_Sequence.unchanged(row[x - 1]));
+      } else if (row[x].isBetterThan(nextRow[x - 1])) {
+        nextRow.add(_Sequence.insert(row[x], newList[y]));
+      } else {
+        nextRow.add(_Sequence.delete(nextRow[x - 1], oldList[x - 1]));
+      }
+    }
+
+    row = nextRow;
+  }
+
+  return row.last.toOperations();
+}
+
+List<_Sequence<Item>> _getInitialRow<Item>(List<Item> oldList) {
+  final row = <_Sequence<Item>>[];
+
+  for (var x = 0; x <= oldList.length; x++) {
+    if (x == 0) {
+      row.add(_Sequence.unchanged(null));
+    } else {
+      row.add(_Sequence.delete(row.last, oldList[x - 1]));
+    }
+  }
+  ;
+  return row;
 }
