@@ -83,7 +83,9 @@ Future<List<Operation<Item>>> diff<Item>(
 }) async {
   assert(
     (areEqual != null) == (getHashCode != null),
-    'Both areEqual and getHashCode or neither of them have been specified.',
+    'You have to either provide both an areEqual and a getHashCode function or '
+    'none at all. For more information, see the documentation of hashCode: '
+    'https://api.dart.dev/stable/2.9.2/dart-core/Object/hashCode.html',
   );
 
   // Use == operator and item hash code as default comparison functions
