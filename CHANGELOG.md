@@ -1,3 +1,7 @@
+## [1.3.1] - 2020-08-27
+
+* Fix assert message.
+
 ## [1.3.0] - 2020-04-29
 
 * Add `diffSync` method.
