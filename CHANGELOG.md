@@ -1,3 +1,7 @@
+## [1.3.2] - 2020-10-07
+
+* Relax dependency on async.
+
 ## [1.3.1] - 2020-08-27
 
 * Fix assert message.
