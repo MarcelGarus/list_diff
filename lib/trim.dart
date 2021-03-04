@@ -1,8 +1,6 @@
-part of 'list_diff.dart';
-
 /// Check if the lists start or end with the same items to trim the problem down
 /// as much as possible.
-_TrimResult<Item> _trim<Item>(
+_TrimResult<Item> trim<Item>(
   List<Item> oldList,
   List<Item> newList,
   bool Function(Item a, Item b) areEqual,
@@ -34,12 +32,10 @@ _TrimResult<Item> _trim<Item>(
 
 class _TrimResult<Item> {
   const _TrimResult({
-    @required this.shortenedOldList,
-    @required this.shortenedNewList,
-    @required this.start,
-  })  : assert(shortenedOldList != null),
-        assert(shortenedNewList != null),
-        assert(start != null);
+    required this.shortenedOldList,
+    required this.shortenedNewList,
+    required this.start,
+  });
 
   final List<Item> shortenedOldList;
   final List<Item> shortenedNewList;

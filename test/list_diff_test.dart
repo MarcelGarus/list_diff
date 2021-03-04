@@ -1,7 +1,7 @@
 import 'package:list_diff/list_diff.dart';
 import 'package:test/test.dart';
 
-List<Item> list, newList;
+late List<Item> list, newList;
 
 class Item {
   Item(this.id, this.value);

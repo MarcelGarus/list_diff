@@ -1,16 +1,12 @@
-/// Offers the [diff] function, which calculates a minimal list of [Operation]s
-/// that convert one list into another.
-library list_diff;
+import 'calculate.dart';
+import 'isolated.dart';
+import 'operation.dart';
+import 'trim.dart';
 
-import 'dart:isolate';
+export 'operation.dart';
 
-import 'package:async/async.dart';
-import 'package:meta/meta.dart';
-
-part 'calculate.dart';
-part 'isolated.dart';
-part 'operation.dart';
-part 'trim.dart';
+typedef EqualityChecker<Item> = bool Function(Item a, Item b);
+typedef HashCodeGetter<Item> = int Function(Item a);
 
 /// Calculates a minimal list of [Operation]s that convert the [oldList] into
 /// the [newList].
@@ -77,44 +73,45 @@ part 'trim.dart';
 Future<List<Operation<Item>>> diff<Item>(
   List<Item> oldList,
   List<Item> newList, {
-  bool spawnIsolate,
-  bool Function(Item a, Item b) areEqual,
-  int Function(Item item) getHashCode,
+  bool? spawnIsolate,
+  EqualityChecker<Item>? areEqual,
+  HashCodeGetter<Item>? getHashCode,
 }) async {
   assert(
-    (areEqual != null) == (getHashCode != null),
+    (areEqual == null) == (getHashCode == null),
     'You have to either provide both an areEqual and a getHashCode function or '
     'none at all. For more information, see the documentation of hashCode: '
     'https://api.dart.dev/stable/2.9.2/dart-core/Object/hashCode.html',
   );
 
   // Use == operator and item hash code as default comparison functions
-  areEqual ??= (a, b) => a == b;
-  getHashCode ??= (item) => item.hashCode;
+  final areEqualCheck = areEqual ?? (a, b) => a == b;
+  final getHashCodeCheck = getHashCode ?? (item) => item.hashCode;
 
-  final trimResult = _trim(oldList, newList, areEqual);
+  final trimResult = trim(oldList, newList, areEqualCheck);
 
-  spawnIsolate ??= _shouldSpawnIsolate(
-    trimResult.shortenedOldList,
-    trimResult.shortenedNewList,
-  );
+  final spawnIsolate_ = spawnIsolate ??
+      shouldSpawnIsolate(
+        trimResult.shortenedOldList,
+        trimResult.shortenedNewList,
+      );
 
   // Those are sublists that reduce the problem to a smaller problem domain.
-  List<Operation<Item>> operations = spawnIsolate
-      ? await _calculateDiffInSeparateIsolate(
+  List<Operation<Item>> operations = spawnIsolate_
+      ? await calculateDiffInSeparateIsolate(
           trimResult.shortenedOldList,
           trimResult.shortenedNewList,
-          areEqual,
-          getHashCode,
+          areEqualCheck,
+          getHashCodeCheck,
         )
       : diffSync(
           trimResult.shortenedOldList,
           trimResult.shortenedNewList,
-          areEqual: areEqual,
+          areEqual: areEqualCheck,
         );
 
   // Shift operations back.
-  return operations.map((op) => op._shift(trimResult.start)).toList();
+  return operations.map((op) => op.shift(trimResult.start)).toList();
 }
 
 /// Calculates a minimal list of [Operation]s that convert the [oldList] into
@@ -128,20 +125,20 @@ Future<List<Operation<Item>>> diff<Item>(
 List<Operation<Item>> diffSync<Item>(
   List<Item> oldList,
   List<Item> newList, {
-  bool Function(Item a, Item b) areEqual,
+  EqualityChecker<Item>? areEqual,
 }) {
   // Use == operator and item hash code as default comparison functions
-  areEqual ??= (a, b) => a == b;
+  final areEqualCheck = areEqual ?? (a, b) => a == b;
 
-  final trimResult = _trim(oldList, newList, areEqual);
+  final trimResult = trim(oldList, newList, areEqualCheck);
 
   // Those are sublists that reduce the problem to a smaller problem domain.
-  List<Operation<Item>> operations = _calculateDiffSync(
+  List<Operation<Item>> operations = calculateDiffSync(
     trimResult.shortenedOldList,
     trimResult.shortenedNewList,
-    areEqual,
+    areEqualCheck,
   );
 
   // Shift operations back.
-  return operations.map((op) => op._shift(trimResult.start)).toList();
+  return operations.map((op) => op.shift(trimResult.start)).toList();
 }

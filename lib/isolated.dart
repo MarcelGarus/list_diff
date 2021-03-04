@@ -1,6 +1,11 @@
-part of 'list_diff.dart';
+import 'dart:isolate';
 
-bool _shouldSpawnIsolate<Item>(List<Item> oldList, List<Item> newList) {
+import 'package:async/async.dart';
+
+import 'list_diff.dart';
+import 'operation.dart';
+
+bool shouldSpawnIsolate<Item>(List<Item> oldList, List<Item> newList) {
   // If no [spawnIsolate] is given, we try to automatically choose a value that
   // aligns with our performance goals.
   // The algorithm fills an N times M table of cells, where N and M are the
@@ -50,7 +55,7 @@ bool _shouldSpawnIsolate<Item>(List<Item> oldList, List<Item> newList) {
 //     in the new list if this is an insertion.
 // * The main isolate can then reconstruct the operations by looking up the
 //   original items.
-Future<List<Operation<Item>>> _calculateDiffInSeparateIsolate<Item>(
+Future<List<Operation<Item>>> calculateDiffInSeparateIsolate<Item>(
   List<Item> oldList,
   List<Item> newList,
   bool Function(Item a, Item b) areEqual,
@@ -92,7 +97,7 @@ Future<void> _calculationInIsolate(dynamic message) async {
 }
 
 // Used in the worker isolate to refer to an item in the main isolate.
-class _ReferenceToItemOnOtherIsolate {
+class ReferenceToItemOnOtherIsolate {
   final StreamQueue port;
   final SendPort sendPort;
 
@@ -100,15 +105,15 @@ class _ReferenceToItemOnOtherIsolate {
   final int index;
   final int hashCode;
 
-  _ReferenceToItemOnOtherIsolate({
-    this.port,
-    this.sendPort,
-    this.isFromOldList,
-    this.index,
-    this.hashCode,
+  ReferenceToItemOnOtherIsolate({
+    required this.port,
+    required this.sendPort,
+    required this.isFromOldList,
+    required this.index,
+    required this.hashCode,
   });
 
-  Future<bool> equals(_ReferenceToItemOnOtherIsolate other) async {
+  Future<bool> equals(ReferenceToItemOnOtherIsolate other) async {
     assert(isFromOldList != other.isFromOldList,
         "We shouldn't need to compare items of the same list.");
     if (hashCode != other.hashCode) {
@@ -124,22 +129,25 @@ class _ReferenceToItemOnOtherIsolate {
   }
 }
 
-void _sendItemList(SendPort sendPort, List<dynamic> list,
-    int Function(dynamic item) getHashCode) {
+void _sendItemList<Item>(
+  SendPort sendPort,
+  List<dynamic> list,
+  int Function(Item item) getHashCode,
+) {
   sendPort.send(list.length);
   for (var item in list) {
     sendPort.send(getHashCode(item));
   }
 }
 
-Future<List<_ReferenceToItemOnOtherIsolate>> _receiveItemList(
+Future<List<ReferenceToItemOnOtherIsolate>> _receiveItemList(
     StreamQueue port, SendPort sendPort,
-    {bool isOldList}) async {
+    {required bool isOldList}) async {
   final length = await port.next;
-  final list = <_ReferenceToItemOnOtherIsolate>[];
+  final list = <ReferenceToItemOnOtherIsolate>[];
 
   for (var i = 0; i < length; i++) {
-    list.add(_ReferenceToItemOnOtherIsolate(
+    list.add(ReferenceToItemOnOtherIsolate(
       port: port,
       sendPort: sendPort,
       isFromOldList: isOldList,
@@ -151,7 +159,7 @@ Future<List<_ReferenceToItemOnOtherIsolate>> _receiveItemList(
 }
 
 void _sendOperationsList(SendPort sendPort,
-    List<Operation<_ReferenceToItemOnOtherIsolate>> operations) {
+    List<Operation<ReferenceToItemOnOtherIsolate>> operations) {
   sendPort..send(true)..send(operations.length);
   for (final op in operations) {
     sendPort..send(op.isInsertion)..send(op.index)..send(op.item.index);
@@ -165,7 +173,7 @@ Future<List<Operation<Item>>> _receiveOperationsList<Item>(
 ) async {
   Future<Operation<Item>> _receiveOperation() async {
     final bool isInsertion = await port.next;
-    return Operation<Item>._(
+    return Operation<Item>(
       type: isInsertion ? OperationType.insertion : OperationType.deletion,
       index: await port.next,
       item: isInsertion ? newList[await port.next] : oldList[await port.next],

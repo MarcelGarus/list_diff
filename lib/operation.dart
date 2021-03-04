@@ -1,11 +1,9 @@
-part of 'list_diff.dart';
-
 enum OperationType { insertion, deletion }
 
-/// A single operation on a list. Either [isInsertion] of an [item] at an
-/// [index] or [isDeletion] of an [item] at an [index].
+/// A single operation on a list – either an insertion or deletion of an [item]
+/// at an [index].
 ///
-/// Can actually be applied to a [List] by calling [applyTo].
+/// Can be applied to a [List] by calling [applyTo].
 class Operation<Item> {
   final OperationType type;
   bool get isInsertion => type == OperationType.insertion;
@@ -14,9 +12,9 @@ class Operation<Item> {
   final int index;
   final Item item;
 
-  Operation._({this.type, this.index, this.item});
+  Operation({required this.type, required this.index, required this.item});
 
-  Operation<Item> _shift(int shiftAmount) => Operation._(
+  Operation<Item> shift(int shiftAmount) => Operation(
         type: type,
         index: index + shiftAmount,
         item: item,
@@ -28,15 +26,15 @@ class Operation<Item> {
       list.insert(index, item);
     } else {
       assert(
-          list[index] == item,
-          "Tried to remove item $item at index $index, but there's a "
-          "different item at that position: ${list[index]}.");
+        list[index] == item,
+        "Tried to remove item $item at index $index, but there's a different "
+        'item at that position: ${list[index]}.',
+      );
       list.removeAt(index);
     }
   }
 
-  String toString() =>
-      '${isInsertion ? 'Insertion' : 'Deletion'} of $item at $index.';
+  String toString() => '<${isInsertion ? 'Insert' : 'Delete'} $item at $index>';
 }
 
 extension ApplyOperation<T> on List<T> {
