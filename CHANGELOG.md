@@ -1,3 +1,8 @@
+## 2.0.1
+
+* Fix bug that caused a crash when the lists overlap in a certain way.
+* Thanks to @ductranit for reporting the issue!
+
 ## 2.0.0
 
 * Migrate to null-safety.
